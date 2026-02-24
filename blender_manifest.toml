@@ -1,0 +1,12 @@
+schema_version = "1.0.0"
+id = "hymodler"
+version = "1.0.0"
+name = "HyModler"
+tagline = "HyModler"
+maintainer = "Flo_12344 (Florent Daerden)"
+type = "add-on"
+tags = ["Import/Export/Modeling"]
+blender_version_min = "4.2.0"
+license = [
+"SPDX:GPL-3.0-or-later",
+]
