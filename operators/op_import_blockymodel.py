@@ -10,147 +10,107 @@ from .. import hyobject_edit
 
 
 class HytaleDeserializer:
-    class _Node:
-        def __init__(self, node, parent):
-            self.node = node
-            self.parent = parent
-            self.obj = None
+    def parse_node(self, node, parent_obj=None, parent_node=None):
 
-    node_tree = {}
-
-    def _pre_parse_nodes(self, node, parent):
-        self.node_tree[node["id"]] = HytaleDeserializer._Node(node, parent)
+        def parse_vector(vec):
+            out = mathutils.Vector(
+                (
+                    -vec["x"],
+                    vec["z"],
+                    vec["y"],
+                )
+            )
+            return out
 
         if "children" in node:
-            for child in node["children"]:
-                self._pre_parse_nodes(child, node)
-
-    def _split_groups(self):
-        to_add = {}
-        id = 0
-        for n in self.node_tree:
-            node = self.node_tree[n]
-            if node.node["shape"]["type"] != "none":
-                if "children" not in node.node:
-                    continue
-                while str(id) in self.node_tree or str(id) in to_add:
-                    id = id + 1
-                new_parent = copy.deepcopy(node.node)
-                new_parent["id"] = id
-                for c in node.node["children"]:
-                    self.node_tree[c["id"]].parent = new_parent
-                node.node.pop("children")
-                new_parent["children"].insert(0, node.node)
-                new_parent["name"] = new_parent["name"] + "_G"
-                new_parent["shape"]["type"] = "none"
-                to_add[str(id)] = HytaleDeserializer._Node(new_parent, node.parent)
-                node.parent = new_parent
-                node.node["position"]["x"] = 0.0
-                node.node["position"]["y"] = 0.0
-                node.node["position"]["z"] = 0.0
-                node.node["orientation"]["x"] = 0.0
-                node.node["orientation"]["y"] = 0.0
-                node.node["orientation"]["z"] = 0.0
-                node.node["orientation"]["w"] = 1.0
-        for a in to_add:
-            self.node_tree[a] = to_add[a]
-
-    def _gen_objects(self):
-        for n in self.node_tree:
-            node = self.node_tree[n]
-            offset = mathutils.Vector(
-                (
-                    -node.node["shape"]["offset"]["x"] / 10.0,
-                    node.node["shape"]["offset"]["z"] / 10.0,
-                    node.node["shape"]["offset"]["y"] / 10.0,
-                )
+            if node["shape"]["type"] != "none":
+                sub = copy.deepcopy(node)
+                sub.pop("children")
+                sub["position"]["x"] = sub["shape"]["offset"]["x"]
+                sub["position"]["y"] = sub["shape"]["offset"]["y"]
+                sub["position"]["z"] = sub["shape"]["offset"]["z"]
+                sub["shape"]["offset"]["x"] = 0.0
+                sub["shape"]["offset"]["y"] = 0.0
+                sub["shape"]["offset"]["z"] = 0.0
+                sub["orientation"]["w"] = 0.0
+                sub["orientation"]["x"] = 0.0
+                sub["orientation"]["y"] = 0.0
+                sub["orientation"]["z"] = 1.0
+                node["children"].append(sub)
+                node["shape"]["type"] = "none"
+                node["shape"]["stretch"]["x"] = 1.0
+                node["shape"]["stretch"]["y"] = 1.0
+                node["shape"]["stretch"]["z"] = 1.0
+                pass
+        origin = parse_vector(node["position"]) / 10.0
+        stretch = parse_vector(node["shape"]["stretch"])
+        stretch.x *= -1.0
+        offset = parse_vector(node["shape"]["offset"]) / 10.0
+        rotation = mathutils.Quaternion(
+            (
+                node["orientation"]["w"],
+                -node["orientation"]["x"],
+                node["orientation"]["z"],
+                node["orientation"]["y"],
             )
-            rotation = mathutils.Quaternion(
-                (
-                    node.node["orientation"]["w"],
-                    -node.node["orientation"]["x"],
-                    node.node["orientation"]["z"],
-                    node.node["orientation"]["y"],
+        )
+        name = node["name"]
+        match node["shape"]["type"]:
+            case "none":
+                if node["name"].endswith("-Attachement"):
+                    obj = hyobjects.create_attachement()
+                else:
+                    obj = hyobjects.create_group()
+                    name += "_G"
+
+            case "quad":
+                obj = hyobjects.create_hyquad()
+                obj.hymodler_size[0] = node["shape"]["settings"]["size"]["x"]
+                obj.hymodler_size[1] = node["shape"]["settings"]["size"]["y"]
+                prot = hyobject_edit.get_initial_quad_rot(
+                    node["shape"]["settings"]["normal"]
                 )
-            )
-            match node.node["shape"]["type"]:
-                case "none":
-                    if node.node["name"].endswith("-Attachement"):
-                        node.obj = hyobjects.create_attachement()
-                    else:
-                        node.obj = hyobjects.create_group()
 
-                    pass
-                case "box":
-                    node.obj = hyobjects.create_hybox()
+                rotation = rotation @ prot
+                offset.rotate(prot)
 
-                    node.obj.hymodler_size[0] = node.node["shape"]["settings"]["size"][
-                        "x"
-                    ]
-                    node.obj.hymodler_size[2] = node.node["shape"]["settings"]["size"][
-                        "y"
-                    ]
-                    node.obj.hymodler_size[1] = node.node["shape"]["settings"]["size"][
-                        "z"
-                    ]
+                hyobject_edit.set_origin_to_geometry_center(obj)
+                hyobject_edit.add_offset_to_hyobject(obj, offset)
+            case "box":
+                obj = hyobjects.create_hybox()
 
-                    hyobject_edit.set_origin_to_geometry_center(node.obj)
-                    hyobject_edit.add_offset_to_hyobject(node.obj, -offset)
+                #
+                obj.hymodler_size[0] = node["shape"]["settings"]["size"]["x"]
+                obj.hymodler_size[2] = node["shape"]["settings"]["size"]["y"]
+                obj.hymodler_size[1] = node["shape"]["settings"]["size"]["z"]
 
-                    pass
-                case "quad":
-                    node.obj = hyobjects.create_hyquad()
-                    node.obj.hymodler_size[0] = node.node["shape"]["settings"]["size"][
-                        "x"
-                    ]
-                    node.obj.hymodler_size[1] = node.node["shape"]["settings"]["size"][
-                        "y"
-                    ]
-                    prot = hyobject_edit.get_initial_quad_rot(
-                        node.node["shape"]["settings"]["normal"]
-                    )
+                hyobject_edit.set_origin_to_geometry_center(obj)
+                hyobject_edit.add_offset_to_hyobject(obj, offset)
+            case _:
+                return
 
-                    rotation = rotation @ prot
-                    offset.rotate(prot)
+        obj.name = name
+        obj.hymodler_bbname = node["name"]
+        obj.location = origin
+        obj.rotation_quaternion = rotation
+        obj.scale = stretch
 
-                    hyobject_edit.set_origin_to_geometry_center(node.obj)
-                    hyobject_edit.add_offset_to_hyobject(node.obj, -offset)
-                    pass
-            node.obj.name = node.node["name"]
-            node.obj.hymodler_bbname = node.node["name"]
-            node.obj.location.x = -node.node["position"]["x"] / 10.0
-            node.obj.location.y = node.node["position"]["z"] / 10.0
-            node.obj.location.z = node.node["position"]["y"] / 10.0
+        if parent_obj is not None:
+            if node["shape"]["type"] == "none":
+                if parent_node is not None and parent_obj.name.endswith("_G"):
+                    parent_offset = parse_vector(parent_node["shape"]["offset"]) / 10.0
+                    obj.location = origin + parent_offset
 
-            node.obj.rotation_quaternion = rotation
+            obj.parent = parent_obj
 
-    def _parent_objects(self):
-        for n in self.node_tree:
-            node = self.node_tree[n]
-            if node.parent is not None:
-                node.obj.parent = self.node_tree[str(node.parent["id"])].obj
-        pass
-        pass
+        if "children" in node:
+            for n in node["children"]:
+                self.parse_node(n, obj, node)
 
     def load_nodes(self, nodes):
         for node in nodes:
-            self._pre_parse_nodes(node, None)
-
-        self._split_groups()
-        self._gen_objects()
-        self._parent_objects()
-
-        # self.debug_output()
+            self.parse_node(node)
         pass
-
-    def debug_output(self):
-        with open("/home/flo_12344/Documents/hytale-modding/debug/debug.txt", "w") as f:
-            for n in self.node_tree:
-                f.write(str(n) + " : {" + self.node_tree[n].node["name"])
-                if self.node_tree[n].parent != None:
-                    f.write(", " + self.node_tree[n].parent["name"])
-                f.write("} " + self.node_tree[n].node["shape"]["type"] + "\n")
-            pass
 
 
 class OP_Import_Blockymodel(bpy.types.Operator, ImportHelper):

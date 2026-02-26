@@ -26,19 +26,9 @@ def set_origin_to_geometry_center(obj):
 
 
 def add_offset_to_hyobject(obj, offset):
-    verts = obj.data.vertices
-    center = mathutils.Vector()
+    obj.data.transform(mathutils.Matrix.Translation(-offset))
 
-    for v in verts:
-        center += v.co
-    center /= len(verts)
-    center = center + offset
-    obj.data.transform(mathutils.Matrix.Translation(-center))
-
-    obj.matrix_world.translation += obj.matrix_world.to_3x3() @ center
-    # obj.data.transform(mathutils.Matrix.Translation(-offset))
-    #
-    # obj.matrix_world.translation += obj.matrix_world.to_3x3() @ offset
+    obj.matrix_world.translation += obj.matrix_world.to_3x3() @ offset
     obj.data.update()
 
 
