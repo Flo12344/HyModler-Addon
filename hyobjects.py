@@ -2,6 +2,7 @@ import math
 
 import bmesh
 import bpy
+from . import hyobject_uv
 
 
 def create_hybox():
@@ -43,11 +44,6 @@ def create_hybox():
     bpy.context.view_layer.objects.active = obj
     obj["hymesh"] = True
     obj["type"] = "box"
-    fd = {}
-    fd["r"] = [0, 0, 0, 0, 0, 0]
-    fd["mx"] = [False, False, False, False, False, False]
-    fd["my"] = [False, False, False, False, False, False]
-    obj["fd"] = fd
     obj.rotation_mode = "QUATERNION"
     return obj
 
@@ -82,11 +78,6 @@ def create_hyquad():
     bpy.context.view_layer.objects.active = obj
     obj["hymesh"] = True
     obj["type"] = "quad"
-    fd = {}
-    fd["r"] = [0]
-    fd["mx"] = [False]
-    fd["my"] = [False]
-    obj["fd"] = fd
 
     obj.name = "HyQuad"
     obj.rotation_mode = "QUATERNION"

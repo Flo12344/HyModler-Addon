@@ -2,6 +2,7 @@ import bpy
 
 from . import animation
 from .. import hyobject_edit
+from .. import hyobject_uv
 
 
 def register_properties():
@@ -14,6 +15,31 @@ def register_properties():
         subtype="NONE",
         update=hyobject_edit.set_hyobject_size,
     )
+    bpy.types.Object.hymodler_uv_rotation = bpy.props.IntVectorProperty(
+        name="UV Rotation",
+        description="",
+        size=6,
+        default=(0, 0, 0, 0, 0, 0),
+        subtype="NONE",
+        update=hyobject_uv.update_uv,
+    )
+    bpy.types.Object.hymodler_uv_vertical_flip = bpy.props.BoolVectorProperty(
+        name="UV Vertical Flip",
+        description="",
+        size=6,
+        default=(False, False, False, False, False, False),
+        subtype="NONE",
+        update=hyobject_uv.update_uv,
+    )
+    bpy.types.Object.hymodler_uv_horizontal_flip = bpy.props.BoolVectorProperty(
+        name="UV Horizontal Flip",
+        description="",
+        size=6,
+        default=(False, False, False, False, False, False),
+        subtype="NONE",
+        update=hyobject_uv.update_uv,
+    )
+
     bpy.types.Object.hymodler_bbname = bpy.props.StringProperty(
         name="BB Name", description="", default="", subtype="NONE", maxlen=0
     )
