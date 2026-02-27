@@ -81,6 +81,22 @@ def rotate_uv(obj, w, h, face, lay):
     pass
 
 
+def flip_vertical_uv(obj, face, lay):
+    pass
+
+
+def unflip_vertical_uv(obj, face, lay):
+    pass
+
+
+def flip_horizontal_uv(obj, face, lay):
+    pass
+
+
+def unflip_horizontal_uv(obj, face, lay):
+    pass
+
+
 def update_uv(self=None, context=None):
     if bpy.context.mode == "EDIT_MESH":
         update_uv_EDIT()
@@ -114,4 +130,21 @@ def update_uv_EDIT():
 
 
 def update_uv_OBJECT():
+    obj = bpy.context.active_object
+    bm = bmesh.from_edit_mesh(obj.data)
+    uv_lay = bm.loops.layers.uv.verify()
+
+    for f in bm.faces:
+        width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
+        if obj["type"] == "quad":
+            width = obj.hymodler_size[0]
+            height = obj.hymodler_size[1]
+
+        w = width
+        h = height
+        unrotate_uv(w, h, f.loops, uv_lay)
+        rotate_uv(obj, w, h, f, uv_lay)
+
+    bmesh.update_edit_mesh(obj.data)
+    bm.free()
     pass
