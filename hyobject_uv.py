@@ -90,8 +90,7 @@ def update_uv(self=None, context=None):
 
 
 def update_uv_EDIT():
-    context = bpy.context
-    ob = context.edit_object
+    ob = bpy.context.edit_object
     me = ob.data
     obj = bpy.context.active_object
     bm = bmesh.from_edit_mesh(me)
@@ -100,6 +99,10 @@ def update_uv_EDIT():
     selfaces = [f for f in bm.faces if f.select]
     for f in selfaces:
         width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
+        if obj["type"] == "quad":
+            width = obj.hymodler_size[0]
+            height = obj.hymodler_size[1]
+
         w = width
         h = height
         unrotate_uv(w, h, f.loops, uv_lay)
