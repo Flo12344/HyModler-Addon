@@ -2,43 +2,9 @@ import bpy
 import mathutils
 import bmesh
 
+from .. import hyobject_uv
+
 import math
-
-
-def normal_to_hytale_wh(normal, mesh_size):
-    mn = 0.5
-    if normal.x > mn or normal.x < -mn:
-        return mesh_size[1], mesh_size[2]
-    elif normal.z > mn or normal.z < -mn:
-        return mesh_size[0], mesh_size[1]
-    elif normal.y > mn or normal.y < -mn:
-        return mesh_size[0], mesh_size[2]
-
-
-def rotate(v, r):
-    x, y = v
-    r %= 4
-    if r == 0:
-        return x, y
-    if r == 1:
-        return -y, x
-    if r == 2:
-        return -x, -y
-    if r == 3:
-        return y, -x
-
-
-def rotation_offset(v, r):
-    x, y = v
-    r %= 4
-    if r == 0:
-        return 0, 0
-    if r == 1:
-        return y, 0
-    if r == 2:
-        return x, y
-    if r == 3:
-        return 0, x
 
 
 class OP_Rotate_UV_90_Plus(bpy.types.Operator):
@@ -64,13 +30,15 @@ class OP_Rotate_UV_90_Plus(bpy.types.Operator):
 
         selfaces = [f for f in bm.faces if f.select]
         for f in selfaces:
-            width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
+            width, height = hyobject_uv.normal_to_hytale_wh(f.normal, obj.hymodler_size)
             w = width
             h = height
             cr = obj["fd"]["r"][f.index]
-            bx, by = rotation_offset((w, h), cr)
+            bx, by = hyobject_uv.rotation_offset(
+                (w, h), hyobject_uv.get_current_rotation(f.loops, uv_lay)
+            )
             cr += 1
-            ox, oy = rotation_offset((w, h), cr)
+            ox, oy = hyobject_uv.rotation_offset((w, h), cr)
             x = f.loops[0][uv_lay].uv.x - PIXEL_WIDTH * bx + PIXEL_WIDTH * ox
             y = f.loops[0][uv_lay].uv.y - PIXEL_HEIGHT * by + PIXEL_HEIGHT * oy
             local_uvs = [
@@ -80,7 +48,7 @@ class OP_Rotate_UV_90_Plus(bpy.types.Operator):
                 (0, h),
             ]
             for loop, uv in zip(f.loops, local_uvs):
-                rx, ry = rotate(uv, cr)
+                rx, ry = hyobject_uv.rotate(uv, cr)
                 loop[uv_lay].uv = mathutils.Vector(
                     (x + PIXEL_WIDTH * rx, y + PIXEL_HEIGHT * ry)
                 )
@@ -116,13 +84,15 @@ class OP_Rotate_UV_90_Minus(bpy.types.Operator):
 
         selfaces = [f for f in bm.faces if f.select]
         for f in selfaces:
-            width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
+            width, height = hyobject_uv.normal_to_hytale_wh(f.normal, obj.hymodler_size)
             w = width
             h = height
             cr = obj["fd"]["r"][f.index]
-            bx, by = rotation_offset((w, h), cr)
+            bx, by = hyobject_uv.rotation_offset(
+                (w, h), hyobject_uv.get_current_rotation(f.loops, uv_lay)
+            )
             cr -= 1
-            ox, oy = rotation_offset((w, h), cr)
+            ox, oy = hyobject_uv.rotation_offset((w, h), cr)
             x = f.loops[0][uv_lay].uv.x - PIXEL_WIDTH * bx + PIXEL_WIDTH * ox
             y = f.loops[0][uv_lay].uv.y - PIXEL_HEIGHT * by + PIXEL_HEIGHT * oy
             local_uvs = [
@@ -132,7 +102,7 @@ class OP_Rotate_UV_90_Minus(bpy.types.Operator):
                 (0, h),
             ]
             for loop, uv in zip(f.loops, local_uvs):
-                rx, ry = rotate(uv, cr)
+                rx, ry = hyobject_uv.rotate(uv, cr)
                 loop[uv_lay].uv = mathutils.Vector(
                     (x + PIXEL_WIDTH * rx, y + PIXEL_HEIGHT * ry)
                 )
