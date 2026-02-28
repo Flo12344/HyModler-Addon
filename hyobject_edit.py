@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import mathutils
 import math
+from . import hyobject_uv
 
 
 def set_texture_size(size, context):
@@ -68,7 +69,8 @@ def set_hyobject_size(obj, context):
                     v.co.z = yadd
     bm.to_mesh(obj.data)
     bm.free()
-    update_hyobject_uv(obj, context)
+    hyobject_uv.update_uv()
+    # update_hyobject_uv(obj, context)
 
 
 def get_initial_quad_rot(orient):
