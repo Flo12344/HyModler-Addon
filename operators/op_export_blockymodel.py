@@ -213,7 +213,10 @@ class HytaleSerializer:
                             )
                         )
                         res["offset"] = helper.serialize_vq(uv, 2, 0)
-                        res["mirror"] = {"x": False, "y": False}
+                        res["mirror"] = {
+                            "x": obj.hymodler_uv_horizontal_flip[face.index],
+                            "y": obj.hymodler_uv_vertical_flip[face.index],
+                        }
                         res["angle"] = angle
                         texture[helper.face_id_to_hytale_direction(face.normal)] = res
             pass
