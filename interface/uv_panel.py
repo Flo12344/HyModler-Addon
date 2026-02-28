@@ -44,20 +44,20 @@ class HYMODLER_uv_panel(bpy.types.Panel):
             emboss=True,
             depress=False,
         )
-        # op = layout.operator(
-        #     "sn.dummy_button_operator",
-        #     text="Mirror X",
-        #     icon_value=379,
-        #     emboss=True,
-        #     depress=False,
-        # )
-        # op = layout.operator(
-        #     "sn.dummy_button_operator",
-        #     text="Mirror Y",
-        #     icon_value=378,
-        #     emboss=True,
-        #     depress=False,
-        # )
+        op = layout.operator(
+            "hymodler.flip_uv_horizontal",
+            text="Mirror X",
+            icon_value=379,
+            emboss=True,
+            depress=False,
+        )
+        op = layout.operator(
+            "hymodler.flip_uv_vertical",
+            text="Mirror Y",
+            icon_value=378,
+            emboss=True,
+            depress=False,
+        )
 
 
 def register():

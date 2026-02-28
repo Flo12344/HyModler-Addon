@@ -81,19 +81,29 @@ def rotate_uv(obj, w, h, face, lay):
     pass
 
 
-def flip_vertical_uv(obj, face, lay):
-    pass
+def is_flipped(face, lay):
+    area = 0.0
+    uvs = [loop[lay].uv for loop in face.loops]
+    for i in range(len(uvs)):
+        area += uvs[i - 1].cross(uvs[i])
+    return area < 0
 
 
-def unflip_vertical_uv(obj, face, lay):
-    pass
-
-
-def flip_horizontal_uv(obj, face, lay):
-    pass
-
-
-def unflip_horizontal_uv(obj, face, lay):
+def flip_uv(face, lay, horizontal):
+    if horizontal:
+        v0 = face.loops[0][lay].uv.xy
+        v2 = face.loops[2][lay].uv.xy
+        face.loops[0][lay].uv = face.loops[1][lay].uv.xy
+        face.loops[2][lay].uv = face.loops[3][lay].uv.xy
+        face.loops[1][lay].uv = v0
+        face.loops[3][lay].uv = v2
+    else:
+        v0 = face.loops[0][lay].uv.xy
+        v1 = face.loops[1][lay].uv.xy
+        face.loops[1][lay].uv = face.loops[2][lay].uv.xy
+        face.loops[0][lay].uv = face.loops[3][lay].uv.xy
+        face.loops[2][lay].uv = v1
+        face.loops[3][lay].uv = v0
     pass
 
 
@@ -112,8 +122,7 @@ def update_uv_EDIT():
     bm = bmesh.from_edit_mesh(me)
     uv_lay = bm.loops.layers.uv.verify()
 
-    selfaces = [f for f in bm.faces if f.select]
-    for f in selfaces:
+    for f in bm.faces:
         width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
         if obj["type"] == "quad":
             width = obj.hymodler_size[0]
@@ -121,8 +130,15 @@ def update_uv_EDIT():
 
         w = width
         h = height
+        if is_flipped(f, uv_lay):
+            flip_uv(f, uv_lay, False)
         unrotate_uv(w, h, f.loops, uv_lay)
+
         rotate_uv(obj, w, h, f, uv_lay)
+        if obj.hymodler_uv_vertical_flip[f.index]:
+            flip_uv(f, uv_lay, False)
+        if obj.hymodler_uv_horizontal_flip[f.index]:
+            flip_uv(f, uv_lay, True)
 
     bmesh.update_edit_mesh(me)
     bm.free()
@@ -142,8 +158,14 @@ def update_uv_OBJECT():
 
         w = width
         h = height
+        if is_flipped(f, uv_lay):
+            flip_uv(f, uv_lay, True)
         unrotate_uv(w, h, f.loops, uv_lay)
         rotate_uv(obj, w, h, f, uv_lay)
+        if obj.hymodler_uv_vertical_flip[f.index]:
+            flip_uv(f, uv_lay, False)
+        if obj.hymodler_uv_horizontal_flip[f.index]:
+            flip_uv(f, uv_lay, True)
 
     bmesh.update_edit_mesh(obj.data)
     bm.free()
