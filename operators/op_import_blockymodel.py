@@ -5,11 +5,94 @@ import bmesh
 from bpy_extras.io_utils import ImportHelper
 import json
 import copy
+from .. import helper
 from .. import hyobjects
 from .. import hyobject_edit
+from .. import hyobject_uv
 
 
 class HytaleDeserializer:
+    def __texture_handling(self, obj, textures):
+        def parse_vector(vec):
+            texture_size = bpy.context.scene.hymodler_texturesize
+            out = mathutils.Vector((vec["x"], vec["y"]))
+            out.x /= texture_size[0]
+            out.y /= texture_size[1]
+            out.y = 1.0 - out.y
+            return out
+
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        uv_lay = bm.loops.layers.uv.verify()
+
+        for f in bm.faces:
+            if obj["type"] == "quad":
+                uv_data = textures[next(iter(textures))]
+            else:
+                fname = helper.face_id_to_hytale_direction(f.normal)
+                if fname not in textures:
+                    continue
+                uv_data = textures[fname]
+
+            obj.hymodler_uv_rotation[f.index] = int(uv_data["angle"] / 90)
+            obj.hymodler_uv_vertical_flip[f.index] = uv_data["mirror"]["y"]
+            obj.hymodler_uv_horizontal_flip[f.index] = uv_data["mirror"]["x"]
+        bm.to_mesh(obj.data)
+        bm.free()
+        hyobject_uv.update_uv()
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        uv_lay = bm.loops.layers.uv.verify()
+        for f in bm.faces:
+            if obj["type"] == "quad":
+                uv_data = textures[next(iter(textures))]
+            else:
+                fname = helper.face_id_to_hytale_direction(f.normal)
+                if fname not in textures:
+                    continue
+                uv_data = textures[fname]
+            ymax = float(-math.inf)
+            ymin = float(math.inf)
+            for loop in f.loops:
+                if ymax < loop[uv_lay].uv.y:
+                    ymax = loop[uv_lay].uv.y
+                if ymin > loop[uv_lay].uv.y:
+                    ymin = loop[uv_lay].uv.y
+
+            y = f.loops[0][uv_lay].uv - f.loops[1][uv_lay].uv
+            x = f.loops[0][uv_lay].uv - f.loops[3][uv_lay].uv
+            texture_size = bpy.context.scene.hymodler_texturesize
+            PIXEL_WIDTH = 1.0 / texture_size[0]
+            PIXEL_HEIGHT = 1.0 / texture_size[1]
+            width, height = hyobject_uv.normal_to_hytale_wh(f.normal, obj.hymodler_size)
+            if obj["type"] == "quad":
+                width = obj.hymodler_size[0]
+                height = obj.hymodler_size[1]
+            ox, oy = hyobject_uv.rotation_offset(
+                (width, height),
+                obj.hymodler_uv_rotation[f.index],
+            )
+
+            offset = parse_vector(uv_data["offset"]) - f.loops[0][uv_lay].uv
+            offset.y -= ymax - ymin
+            # if uv_data["mirror"]["y"]:
+            #     offset.y -= oy * PIXEL_HEIGHT
+            # else:
+            offset.y -= oy * PIXEL_HEIGHT
+
+            # if uv_data["mirror"]["x"]:
+            #     offset.x -= ox * PIXEL_WIDTH
+            # else:
+            offset.x += ox * PIXEL_WIDTH
+
+            for loop in f.loops:
+                loop[uv_lay].uv += offset
+            # hyobject_uv.update_uv()
+
+        bm.to_mesh(obj.data)
+        bm.free()
+        pass
+
     def parse_node(self, node, parent_obj=None, parent_node=None):
 
         def parse_vector(vec):
@@ -75,7 +158,9 @@ class HytaleDeserializer:
                 offset.rotate(prot)
 
                 hyobject_edit.set_origin_to_geometry_center(obj)
-                hyobject_edit.add_offset_to_hyobject(obj, offset)
+                hyobject_edit.add_offset_to_hyobject(obj, -offset)
+
+                self.__texture_handling(obj, node["shape"]["textureLayout"])
             case "box":
                 obj = hyobjects.create_hybox()
 
@@ -85,7 +170,9 @@ class HytaleDeserializer:
                 obj.hymodler_size[1] = node["shape"]["settings"]["size"]["z"]
 
                 hyobject_edit.set_origin_to_geometry_center(obj)
-                hyobject_edit.add_offset_to_hyobject(obj, offset)
+                hyobject_edit.add_offset_to_hyobject(obj, -offset)
+
+                self.__texture_handling(obj, node["shape"]["textureLayout"])
             case _:
                 return
 

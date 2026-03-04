@@ -147,7 +147,8 @@ def update_uv_EDIT():
 
 def update_uv_OBJECT():
     obj = bpy.context.active_object
-    bm = bmesh.from_edit_mesh(obj.data)
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
     uv_lay = bm.loops.layers.uv.verify()
 
     for f in bm.faces:
@@ -167,6 +168,6 @@ def update_uv_OBJECT():
         if obj.hymodler_uv_horizontal_flip[f.index]:
             flip_uv(f, uv_lay, True)
 
-    bmesh.update_edit_mesh(obj.data)
+    bm.to_mesh(obj.data)
     bm.free()
     pass
