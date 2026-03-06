@@ -85,15 +85,15 @@ def get_initial_quad_rot(orient):
             )
         case "-Y":
             return mathutils.Quaternion(
-                (-math.sqrt(2.0) / 2.0, math.sqrt(2.0) / 2.0, 0.0, 0.0)
+                (math.sqrt(2.0) / 2.0, -math.sqrt(2.0) / 2.0, 0.0, 0.0)
             )
         case "+X":
             return mathutils.Quaternion(
-                (-math.sqrt(2.0) / 2.0, 0.0, 0.0, math.sqrt(2.0) / 2.0)
+                (math.sqrt(2.0) / 2.0, 0.0, 0.0, math.sqrt(2.0) / 2.0)
             )
         case "-X":
             return mathutils.Quaternion(
-                (math.sqrt(2.0) / 2.0, 0.0, 0.0, math.sqrt(2.0) / 2.0)
+                (math.sqrt(2.0) / 2.0, 0.0, 0.0, -math.sqrt(2.0) / 2.0)
             )
 
     pass

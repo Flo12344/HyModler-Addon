@@ -12,6 +12,8 @@ def normal_to_hytale_wh(normal, mesh_size):
         return mesh_size[0], mesh_size[1]
     elif normal.y > mn or normal.y < -mn:
         return mesh_size[0], mesh_size[2]
+    else:
+        return 0, 0
 
 
 def rotate(v, r):

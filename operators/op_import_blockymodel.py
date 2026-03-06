@@ -35,6 +35,10 @@ class HytaleDeserializer:
                 uv_data = textures[fname]
 
             obj.hymodler_uv_rotation[f.index] = int(uv_data["angle"] / 90)
+            if obj.hymodler_uv_rotation[f.index] == 3:
+                obj.hymodler_uv_rotation[f.index] = 1
+            elif obj.hymodler_uv_rotation[f.index] == 1:
+                obj.hymodler_uv_rotation[f.index] = 3
             obj.hymodler_uv_vertical_flip[f.index] = uv_data["mirror"]["y"]
             obj.hymodler_uv_horizontal_flip[f.index] = uv_data["mirror"]["x"]
         bm.to_mesh(obj.data)
@@ -44,50 +48,48 @@ class HytaleDeserializer:
         bm.from_mesh(obj.data)
         uv_lay = bm.loops.layers.uv.verify()
         for f in bm.faces:
+            face_size_x, face_size_y = obj.hymodler_size[0], obj.hymodler_size[1]
             if obj["type"] == "quad":
                 uv_data = textures[next(iter(textures))]
             else:
-                fname = helper.face_id_to_hytale_direction(f.normal)
-                if fname not in textures:
+                hytale_face = helper.face_id_to_hytale_direction(f.normal)
+                face_size_x, face_size_y = hyobject_uv.normal_to_hytale_wh(
+                    f.normal, obj.hymodler_size
+                )
+                if hytale_face not in textures:
                     continue
-                uv_data = textures[fname]
-            ymax = float(-math.inf)
-            ymin = float(math.inf)
-            for loop in f.loops:
-                if ymax < loop[uv_lay].uv.y:
-                    ymax = loop[uv_lay].uv.y
-                if ymin > loop[uv_lay].uv.y:
-                    ymin = loop[uv_lay].uv.y
+                uv_data = textures[hytale_face]
 
-            y = f.loops[0][uv_lay].uv - f.loops[1][uv_lay].uv
-            x = f.loops[0][uv_lay].uv - f.loops[3][uv_lay].uv
             texture_size = bpy.context.scene.hymodler_texturesize
             PIXEL_WIDTH = 1.0 / texture_size[0]
             PIXEL_HEIGHT = 1.0 / texture_size[1]
-            width, height = hyobject_uv.normal_to_hytale_wh(f.normal, obj.hymodler_size)
-            if obj["type"] == "quad":
-                width = obj.hymodler_size[0]
-                height = obj.hymodler_size[1]
-            ox, oy = hyobject_uv.rotation_offset(
-                (width, height),
-                obj.hymodler_uv_rotation[f.index],
+            u, v = (
+                uv_data["offset"]["x"] * PIXEL_WIDTH,
+                1.0 - uv_data["offset"]["y"] * PIXEL_HEIGHT,
             )
+            w, h = face_size_x, face_size_y
+            mx = -1 if uv_data.get("mirror", {}).get("x", False) else 0
+            my = -1 if uv_data.get("mirror", {}).get("y", False) else 1
+            angle = obj.hymodler_uv_rotation[f.index]
 
-            offset = parse_vector(uv_data["offset"]) - f.loops[0][uv_lay].uv
-            offset.y -= ymax - ymin
-            # if uv_data["mirror"]["y"]:
-            #     offset.y -= oy * PIXEL_HEIGHT
-            # else:
-            offset.y -= oy * PIXEL_HEIGHT
+            offset = mathutils.Vector((0, 0))
+            if angle == 0:
+                offset.x = u - w * mx * PIXEL_WIDTH
+                offset.y = v - h * my * PIXEL_HEIGHT
+            elif angle == 1:
+                offset.x = u + h * my * PIXEL_WIDTH
+                offset.y = v - w * mx * PIXEL_HEIGHT
+            elif angle == 2:
+                offset.x = u - w * mx * PIXEL_WIDTH
+                offset.y = v + h * my * PIXEL_HEIGHT
+            elif angle == 3:
+                offset.x = u - h * my * PIXEL_WIDTH
+                offset.y = v - w * mx * PIXEL_HEIGHT
 
-            # if uv_data["mirror"]["x"]:
-            #     offset.x -= ox * PIXEL_WIDTH
-            # else:
-            offset.x += ox * PIXEL_WIDTH
+            offset = offset - f.loops[0][uv_lay].uv
 
             for loop in f.loops:
                 loop[uv_lay].uv += offset
-            # hyobject_uv.update_uv()
 
         bm.to_mesh(obj.data)
         bm.free()
@@ -115,10 +117,10 @@ class HytaleDeserializer:
                 sub["shape"]["offset"]["x"] = 0.0
                 sub["shape"]["offset"]["y"] = 0.0
                 sub["shape"]["offset"]["z"] = 0.0
-                sub["orientation"]["w"] = 0.0
+                sub["orientation"]["w"] = 1.0
                 sub["orientation"]["x"] = 0.0
                 sub["orientation"]["y"] = 0.0
-                sub["orientation"]["z"] = 1.0
+                sub["orientation"]["z"] = 0.0
                 node["children"].append(sub)
                 node["shape"]["type"] = "none"
                 node["shape"]["stretch"]["x"] = 1.0
