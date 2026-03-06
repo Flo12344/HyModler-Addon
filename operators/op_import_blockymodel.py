@@ -123,13 +123,23 @@ class HytaleDeserializer:
                 sub["orientation"]["z"] = 0.0
                 node["children"].append(sub)
                 node["shape"]["type"] = "none"
+                sub["shape"]["stretch"] = copy.deepcopy(node["shape"]["stretch"])
                 node["shape"]["stretch"]["x"] = 1.0
                 node["shape"]["stretch"]["y"] = 1.0
                 node["shape"]["stretch"]["z"] = 1.0
-                pass
+            else:
+                node["shape"]["stretch"]["x"] = 1.0
+                node["shape"]["stretch"]["y"] = 1.0
+                node["shape"]["stretch"]["z"] = 1.0
+
         origin = parse_vector(node["position"]) / 10.0
-        stretch = parse_vector(node["shape"]["stretch"])
-        stretch.x *= -1.0
+        stretch = mathutils.Vector(
+            (
+                node["shape"]["stretch"]["x"],
+                node["shape"]["stretch"]["z"],
+                node["shape"]["stretch"]["y"],
+            )
+        )
         offset = parse_vector(node["shape"]["offset"]) / 10.0
         rotation = mathutils.Quaternion(
             (
@@ -181,8 +191,8 @@ class HytaleDeserializer:
         obj.name = name
         obj.hymodler_bbname = node["name"]
         obj.location = origin
-        obj.rotation_quaternion = rotation
         obj.scale = stretch
+        obj.rotation_quaternion = rotation
 
         if parent_obj is not None:
             if node["shape"]["type"] == "none":
