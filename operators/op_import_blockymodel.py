@@ -39,8 +39,12 @@ class HytaleDeserializer:
                 obj.hymodler_uv_rotation[f.index] = 1
             elif obj.hymodler_uv_rotation[f.index] == 1:
                 obj.hymodler_uv_rotation[f.index] = 3
-            obj.hymodler_uv_vertical_flip[f.index] = uv_data["mirror"]["y"]
-            obj.hymodler_uv_horizontal_flip[f.index] = uv_data["mirror"]["x"]
+            obj.hymodler_uv_vertical_flip[f.index] = uv_data.get("mirror", {}).get(
+                "y", False
+            )
+            obj.hymodler_uv_horizontal_flip[f.index] = uv_data.get("mirror", {}).get(
+                "x", False
+            )
         bm.to_mesh(obj.data)
         bm.free()
         hyobject_uv.update_uv()
@@ -74,13 +78,13 @@ class HytaleDeserializer:
 
             offset = mathutils.Vector((0, 0))
             if angle == 0:
-                offset.x = u - w * mx * PIXEL_WIDTH
+                offset.x = u - w * max(mx, 0) * PIXEL_WIDTH
                 offset.y = v - h * my * PIXEL_HEIGHT
             elif angle == 1:
                 offset.x = u + h * my * PIXEL_WIDTH
                 offset.y = v - w * mx * PIXEL_HEIGHT
             elif angle == 2:
-                offset.x = u - w * mx * PIXEL_WIDTH
+                offset.x = u - w * max(mx, 0) * PIXEL_WIDTH
                 offset.y = v + h * my * PIXEL_HEIGHT
             elif angle == 3:
                 offset.x = u - h * my * PIXEL_WIDTH

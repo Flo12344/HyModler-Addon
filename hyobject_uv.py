@@ -110,20 +110,17 @@ def flip_uv(face, lay, horizontal):
 
 
 def update_uv(self=None, context=None):
+    obj = bpy.context.active_object
     if bpy.context.mode == "EDIT_MESH":
-        update_uv_EDIT()
+        ob = bpy.context.edit_object
+        me = ob.data
+        bm = bmesh.from_edit_mesh(me)
     elif bpy.context.mode == "OBJECT":
-        update_uv_OBJECT()
-    pass
-
-
-def update_uv_EDIT():
-    ob = bpy.context.edit_object
-    me = ob.data
-    obj = bpy.context.active_object
-    bm = bmesh.from_edit_mesh(me)
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+    else:
+        return
     uv_lay = bm.loops.layers.uv.verify()
-
     for f in bm.faces:
         width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
         if obj["type"] == "quad":
@@ -141,35 +138,11 @@ def update_uv_EDIT():
             flip_uv(f, uv_lay, False)
         if obj.hymodler_uv_horizontal_flip[f.index]:
             flip_uv(f, uv_lay, True)
-
-    bmesh.update_edit_mesh(me)
-    bm.free()
-    pass
-
-
-def update_uv_OBJECT():
-    obj = bpy.context.active_object
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    uv_lay = bm.loops.layers.uv.verify()
-
-    for f in bm.faces:
-        width, height = normal_to_hytale_wh(f.normal, obj.hymodler_size)
-        if obj["type"] == "quad":
-            width = obj.hymodler_size[0]
-            height = obj.hymodler_size[1]
-
-        w = width
-        h = height
-        if is_flipped(f, uv_lay):
-            flip_uv(f, uv_lay, True)
-        unrotate_uv(w, h, f.loops, uv_lay)
-        rotate_uv(obj, w, h, f, uv_lay)
-        if obj.hymodler_uv_vertical_flip[f.index]:
-            flip_uv(f, uv_lay, False)
-        if obj.hymodler_uv_horizontal_flip[f.index]:
-            flip_uv(f, uv_lay, True)
-
-    bm.to_mesh(obj.data)
+    if bpy.context.mode == "EDIT_MESH":
+        ob = bpy.context.edit_object
+        me = ob.data
+        bmesh.update_edit_mesh(me)
+    elif bpy.context.mode == "OBJECT":
+        bm.to_mesh(obj.data)
     bm.free()
     pass
