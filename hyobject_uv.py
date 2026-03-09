@@ -85,9 +85,11 @@ def rotate_uv(obj, w, h, face, lay):
 
 def is_flipped(face, lay):
     area = 0.0
-    uvs = [loop[lay].uv for loop in face.loops]
+    uvs = [loop[lay].uv.to_2d() for loop in face.loops]
     for i in range(len(uvs)):
         area += uvs[i - 1].cross(uvs[i])
+    if abs(area) < 1e-6:
+        return False
     return area < 0
 
 

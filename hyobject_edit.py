@@ -6,9 +6,26 @@ from . import hyobject_uv
 
 
 def set_texture_size(size, context):
+    selected_objects = [obj.name for obj in bpy.context.selected_objects]
+    active_object = (
+        bpy.context.active_object.name if bpy.context.active_object else None
+    )
+    for obj in bpy.context.scene.objects:
+        obj.select_set(False)
     for i in range(len(bpy.context.scene.objects)):
-        if "hymesh" in bpy.context.scene.objects[i]:
-            update_hyobject_uv(bpy.context.scene.objects[i], context)
+        obj = bpy.context.scene.objects[i]
+        if "hymesh" in obj:
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            hyobject_uv.update_uv()
+            obj.select_set(False)
+
+    for obj in selected_objects:
+        if obj:
+            obj.select_set(True)
+
+    if active_object:
+        bpy.context.view_layer.objects.active = active_object
 
 
 def set_origin_to_geometry_center(obj):
@@ -97,71 +114,3 @@ def get_initial_quad_rot(orient):
             )
 
     pass
-
-
-def update_hyobject_uv(mesh, context):
-    obj_type = mesh["type"]
-    if obj_type == "none":
-        return
-    texture_size = bpy.context.scene.hymodler_texturesize
-    mesh_size = mesh.hymodler_size
-    bm = bmesh.new()
-    bm.from_mesh(mesh.data)
-    uv_lay = bm.loops.layers.uv.verify()
-    PIXEL_WIDTH = 1.0 / texture_size[0]
-    PIXEL_HEIGHT = 1.0 / texture_size[1]
-
-    def normal_to_hytale_wh(normal, mesh_size):
-        mn = 0.5
-        if normal.x > mn or normal.x < -mn:
-            return mesh_size[1], mesh_size[2]
-        elif normal.z > mn or normal.z < -mn:
-            return mesh_size[0], mesh_size[1]
-        elif normal.y > mn or normal.y < -mn:
-            return mesh_size[0], mesh_size[2]
-
-    def rotate(v, r):
-        x, y = v
-        r %= 4
-        if r == 0:
-            return x, y
-        if r == 1:
-            return -y, x
-        if r == 2:
-            return -x, -y
-        if r == 3:
-            return y, -x
-
-    def rotation_offset(v, r):
-        x, y = v
-        r %= 4
-        if r == 0:
-            return 0, 0
-        if r == 1:
-            return y, 0
-        if r == 2:
-            return x, y
-        if r == 3:
-            return 0, x
-
-    for face in bm.faces:
-        width, height = normal_to_hytale_wh(face.normal, mesh_size)
-        cr = mesh["fd"]["r"][face.index]
-        w = width
-        h = height
-        ox, oy = rotation_offset((w, h), cr)
-        x = face.loops[0][uv_lay].uv.x
-        y = face.loops[0][uv_lay].uv.y
-        local_uvs = [
-            (0, 0),
-            (w, 0),
-            (w, h),
-            (0, h),
-        ]
-        for loop, uv in zip(face.loops, local_uvs):
-            rx, ry = rotate(uv, cr)
-            loop[uv_lay].uv = mathutils.Vector(
-                (x + PIXEL_WIDTH * rx, y + PIXEL_HEIGHT * ry)
-            )
-    bm.to_mesh(mesh.data)
-    bm.free()
