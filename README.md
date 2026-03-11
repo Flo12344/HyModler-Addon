@@ -21,6 +21,7 @@ And also because of a let's say "skill issue" on my side I'm way more used to bl
 
 ## Future Features Goal
 
+- Empty parent compact for first child
 - Group to rig (for model imported)
 - Modifiers support
 - geometry nodes support
