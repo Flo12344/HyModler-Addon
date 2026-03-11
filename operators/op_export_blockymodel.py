@@ -5,6 +5,7 @@ import bmesh
 from bpy_extras.io_utils import ExportHelper
 import json
 from .. import helper
+from .. import hyobject_uv
 
 
 class HytaleSerializer:
@@ -16,14 +17,16 @@ class HytaleSerializer:
         return self.node_id
 
     def serialize_scene(self, all_objects):
-
         objs, armatures = self._collect_scene_data(all_objects)
         bone_meshes = self._collect_bone_meshes(all_objects, objs)
 
+        root_objs = [obj for obj in objs if obj.parent is None]
+        root_armatures = [obj for obj in armatures if obj.parent is None]
+
         nodes = []
-        for obj in objs:
+        for obj in root_objs:
             nodes.append(self.serialize_obj(obj, None))
-        for obj in armatures:
+        for obj in root_armatures:
             if obj.name in bone_meshes:
                 armature_meshes = bone_meshes[obj.name]
             else:
@@ -33,8 +36,6 @@ class HytaleSerializer:
 
     def serialize_obj(self, obj, bone_meshes):
         node = self._create_base_node(obj)
-        shape = self._serialize_model_shape(obj)
-        node["shape"] = shape
 
         local_matrix = self._get_obj_local_matrix(obj)
 
@@ -48,6 +49,14 @@ class HytaleSerializer:
         node["orientation"] = helper.serialize_vq(quat, 4, 5)
 
         if obj.type == "ARMATURE":
+            shape = {
+                "type": "none",
+                "settings": {},
+                "textureLayout": {},
+            }
+
+            node["shape"] = shape
+
             prev_pose = obj.data.pose_position
             obj.data.pose_position = "REST"
             bpy.context.view_layer.update()
@@ -59,6 +68,50 @@ class HytaleSerializer:
 
             obj.data.pose_position = prev_pose
             bpy.context.view_layer.update()
+        else:
+            obj_type = obj.get("type", "none")
+
+            if obj_type == "quad":
+                shape = {
+                    "type": "quad",
+                    "stretch": helper.serialize_vq(obj.scale.xzy, 3, 4),
+                    "offset": {"x": 0, "y": 0, "z": 0},
+                    "settings": {
+                        "size": {
+                            "x": obj.hymodler_size[0],
+                            "y": obj.hymodler_size[1],
+                        },
+                        "normal": obj.hymodler_bbquad_orient,
+                    },
+                    "textureLayout": self._serialize_texture(obj),
+                }
+            elif obj_type == "box":
+                shape = {
+                    "type": "box",
+                    "stretch": helper.serialize_vq(obj.scale.xzy, 3, 4),
+                    "offset": {"x": 0, "y": 0, "z": 0},
+                    "settings": {
+                        "size": {
+                            "x": obj.hymodler_size[0],
+                            "y": obj.hymodler_size[2],
+                            "z": obj.hymodler_size[1],
+                        }
+                    },
+                    "textureLayout": self._serialize_texture(obj),
+                }
+            else:
+                shape = {
+                    "type": "none",
+                    "stretch": {"x": 1, "y": 1, "z": 1},
+                    "offset": {"x": 0, "y": 0, "z": 0},
+                    "settings": {},
+                }
+
+            node["shape"] = shape
+            for child in obj.children:
+                if child.type != "ARMATURE":
+                    node["children"].append(self.serialize_obj(child, None))
+
         return node
 
     def _collect_scene_data(self, all_objects):
@@ -98,7 +151,7 @@ class HytaleSerializer:
         shape = self._serialize_bone_shape(bone)
         node["shape"] = shape
 
-        local_matrix = self._get_bone_local_matrix(bone)
+        local_matrix = self._get_local_matrix(bone)
 
         position = local_matrix.to_translation()
         rotation = local_matrix.to_quaternion()
@@ -119,9 +172,12 @@ class HytaleSerializer:
         return node
 
     def _create_base_node(self, obj):
-        return {"id": self.next_id(), "name": obj.name, "children": []}
+        name = obj.name
+        # if len(obj.hymodler_bbname) > 0:
+        # name = obj.hymodler_bbname
+        return {"id": self.next_id(), "name": name, "children": []}
 
-    def _get_bone_local_matrix(self, bone):
+    def _get_local_matrix(self, bone):
         if bone.parent:
             return bone.parent.matrix_local.inverted() @ bone.matrix_local
         return bone.matrix_local
@@ -142,7 +198,7 @@ class HytaleSerializer:
     def _serialize_bone_shape(self, obj, ftype=None):
         shape = {
             "type": "none",
-            "stretch": self._serialize_stretch(obj),
+            "stretch": {"x": 1, "y": 1, "z": 1},  # self._serialize_stretch(obj),
             "unwrapMode": "custom",
             "visible": True,
             "shadingMode": "flat",
@@ -155,25 +211,9 @@ class HytaleSerializer:
 
         return shape
 
-    def _serialize_model_shape(self, obj, ftype=None):
-        shape = {
-            "type": obj["type"] if "type" in obj else "none",
-            "stretch": self._serialize_stretch(obj),
-            "unwrapMode": "custom",
-            "visible": not obj.hide_viewport,
-            "shadingMode": obj.hymodler_shadingmode,
-            "doubleSided": obj.hymodler_doublesided,
-            "offset": self._calculate_pivot(obj),
-        }
-
-        shape["settings"] = self._serialize_settings(obj)
-        shape["textureLayout"] = self._serialize_texture(obj)
-
-        return shape
-
     def _serialize_texture(self, obj):
         texture = {}
-        if obj.type == "ARMATURE":
+        if obj.type == "ARMATURE" or obj.type == "EMPTY":
             return texture
         is_2d = obj["type"] == "quad"
         bm = bmesh.new()
@@ -183,33 +223,64 @@ class HytaleSerializer:
         PIXEL_WIDTH = 1.0 / bpy.data.scenes["Scene"].hymodler_texturesize[0]
         PIXEL_HEIGHT = 1.0 / bpy.data.scenes["Scene"].hymodler_texturesize[1]
         if is_2d:
-            pass
+            bm.faces.ensure_lookup_table()
+            face = bm.faces[0]
+
+            mx = -1 if obj.hymodler_uv_horizontal_flip[face.index] else 0
+            my = -1 if obj.hymodler_uv_vertical_flip[face.index] else 0
+            x, y = obj.hymodler_size[0], obj.hymodler_size[1]
+            rot = obj.hymodler_uv_rotation[face.index]
+            if rot == 1:
+                rot = 3
+            elif rot == 3:
+                rot = 1
+            xoff, yoff = hyobject_uv.rotation_offset(
+                (x * mx, y * my),
+                rot,
+            )
+
+            angle = rot * 90
+            for loop in face.loops:
+                if loop.index == 3 + face.index * 4:
+                    res = {}
+                    uv = loop[uv_lay].uv
+                    uv = mathutils.Vector(
+                        (
+                            (uv[0]) / PIXEL_WIDTH,
+                            (1.0 - uv[1]) / PIXEL_HEIGHT,
+                        )
+                    )
+                    res["offset"] = helper.serialize_vq(uv, 2, 0)
+                    res["mirror"] = {
+                        "x": obj.hymodler_uv_horizontal_flip[face.index],
+                        "y": obj.hymodler_uv_vertical_flip[face.index],
+                    }
+                    res["angle"] = angle
+                    texture[helper.face_id_to_hytale_direction(face.normal)] = res
         else:
             for face in bm.faces:
-                angle = None
-                xoff, yoff = 0.0, 0.0
-                verts = []
-                for v in face.loops:
-                    verts.append(v[uv_lay].uv)
+                mx = -1 if obj.hymodler_uv_horizontal_flip[face.index] else 0
+                my = -1 if obj.hymodler_uv_vertical_flip[face.index] else 0
+                x, y = hyobject_uv.normal_to_hytale_wh(face.normal, obj.hymodler_size)
+                rot = obj.hymodler_uv_rotation[face.index]
+                if rot == 1:
+                    rot = 3
+                elif rot == 3:
+                    rot = 1
+                xoff, yoff = hyobject_uv.rotation_offset(
+                    (x * mx, y * my),
+                    rot,
+                )
 
-                d = 2
-                if verts[0].x > verts[d].x and verts[0].y > verts[d].y:
-                    angle = 180
-                elif verts[0].x > verts[d].x and verts[0].y < verts[d].y:
-                    angle = 270
-                elif verts[0].x < verts[d].x and verts[0].y < verts[d].y:
-                    angle = 0
-                elif verts[0].x < verts[d].x and verts[0].y > verts[d].y:
-                    angle = 90
-
+                angle = rot * 90
                 for loop in face.loops:
                     if loop.index == 3 + face.index * 4:
                         res = {}
                         uv = loop[uv_lay].uv
                         uv = mathutils.Vector(
                             (
-                                (uv[0] + xoff) / PIXEL_WIDTH,
-                                (1.0 - uv[1] - yoff) / PIXEL_HEIGHT,
+                                (uv[0]) / PIXEL_WIDTH - xoff,
+                                (1.0 - uv[1]) / PIXEL_HEIGHT + yoff,
                             )
                         )
                         res["offset"] = helper.serialize_vq(uv, 2, 0)
@@ -264,14 +335,6 @@ class HytaleSerializer:
         pass
 
 
-def export_selected():
-    serializer = HytaleSerializer()
-
-    nodes = serializer.serialize_scene(bpy.context.selected_objects)
-
-    return {"format": "prop", "nodes": nodes, "lod": "auto"}
-
-
 class OP_Export_Blockymodel(bpy.types.Operator, ExportHelper):
     bl_idname = "hymodler.export_blockymodel"
     bl_label = "export_Blockymesh"
@@ -288,7 +351,20 @@ class OP_Export_Blockymodel(bpy.types.Operator, ExportHelper):
         return True
 
     def execute(self, context):
-        j = export_selected()
+        serializer = HytaleSerializer()
+
+        if self.hymodler_selection_only:
+            objects = context.selected_objects
+        else:
+            objects = [
+                obj
+                for obj in context.scene.objects
+                if obj.type in ("MESH", "EMPTY", "ARMATURE")
+            ]
+        nodes = serializer.serialize_scene(objects)
+
+        j = {"format": "prop", "nodes": nodes, "lod": "auto"}
+
         out = json.dumps(j, indent=2)
         with open(self.filepath, mode="w") as file:
             file.seek(0)
