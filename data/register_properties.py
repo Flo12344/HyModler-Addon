@@ -44,7 +44,7 @@ def register_properties():
         name="BB Name", description="", default="", subtype="NONE", maxlen=0
     )
     bpy.types.Object.hymodler_bbquad_orient = bpy.props.StringProperty(
-        name="BB Quad Orient", description="", default="Z+", subtype="NONE", maxlen=2
+        name="BB Quad Orient", description="", default="+Z", subtype="NONE", maxlen=2
     )
     bpy.types.Object.hymodler_bbid = bpy.props.IntProperty(
         name="BB Id",

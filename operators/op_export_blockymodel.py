@@ -40,10 +40,12 @@ class HytaleSerializer:
         local_matrix = self._get_obj_local_matrix(obj)
 
         position = local_matrix.to_translation()
-        rotation = local_matrix.to_quaternion()
+        rotation = obj.rotation_quaternion
+        if obj.parent and obj.parent.type == "ARMATURE":
+            rotation = local_matrix.to_quaternion()
 
         position[0] *= -1.0
-        quat = mathutils.Quaternion((-rotation.x, rotation.z, rotation.y, rotation.w))
+        quat = mathutils.Vector((-rotation.x, rotation.z, rotation.y, rotation.w))
 
         node["position"] = helper.serialize_vq(position.xzy * 10.0, 3, 4)
         node["orientation"] = helper.serialize_vq(quat, 4, 5)
@@ -75,7 +77,7 @@ class HytaleSerializer:
                 shape = {
                     "type": "quad",
                     "stretch": helper.serialize_vq(obj.scale.xzy, 3, 4),
-                    "offset": {"x": 0, "y": 0, "z": 0},
+                    "offset": self._calculate_pivot(obj),
                     "settings": {
                         "size": {
                             "x": obj.hymodler_size[0],
@@ -84,12 +86,16 @@ class HytaleSerializer:
                         "normal": obj.hymodler_bbquad_orient,
                     },
                     "textureLayout": self._serialize_texture(obj),
+                    "unwrapMode": "custom",
+                    "visible": not obj.hide_viewport,
+                    "shadingMode": obj.hymodler_shadingmode,
+                    "doubleSided": obj.hymodler_doublesided,
                 }
             elif obj_type == "box":
                 shape = {
                     "type": "box",
                     "stretch": helper.serialize_vq(obj.scale.xzy, 3, 4),
-                    "offset": {"x": 0, "y": 0, "z": 0},
+                    "offset": self._calculate_pivot(obj),
                     "settings": {
                         "size": {
                             "x": obj.hymodler_size[0],
@@ -98,6 +104,10 @@ class HytaleSerializer:
                         }
                     },
                     "textureLayout": self._serialize_texture(obj),
+                    "unwrapMode": "custom",
+                    "visible": not obj.hide_viewport,
+                    "shadingMode": obj.hymodler_shadingmode,
+                    "doubleSided": obj.hymodler_doublesided,
                 }
             else:
                 shape = {
@@ -129,7 +139,7 @@ class HytaleSerializer:
         bone_meshes = {}
 
         for obj in objects:
-            if obj.type != "MESH":
+            if obj.type != "MESH" and obj.type != "EMPTY":
                 continue
 
             if obj.parent and obj.parent.type == "ARMATURE":
@@ -151,13 +161,13 @@ class HytaleSerializer:
         shape = self._serialize_bone_shape(bone)
         node["shape"] = shape
 
-        local_matrix = self._get_local_matrix(bone)
+        local_matrix = self._get_bone_local_matrix(bone)
 
         position = local_matrix.to_translation()
         rotation = local_matrix.to_quaternion()
 
         position[0] *= -1.0
-        quat = mathutils.Quaternion((-rotation.x, rotation.z, rotation.y, rotation.w))
+        quat = mathutils.Vector((-rotation.x, rotation.z, rotation.y, rotation.w))
 
         node["position"] = helper.serialize_vq(position.xzy * 10.0, 3, 4)
         node["orientation"] = helper.serialize_vq(quat, 4, 5)
@@ -177,7 +187,7 @@ class HytaleSerializer:
         # name = obj.hymodler_bbname
         return {"id": self.next_id(), "name": name, "children": []}
 
-    def _get_local_matrix(self, bone):
+    def _get_bone_local_matrix(self, bone):
         if bone.parent:
             return bone.parent.matrix_local.inverted() @ bone.matrix_local
         return bone.matrix_local
