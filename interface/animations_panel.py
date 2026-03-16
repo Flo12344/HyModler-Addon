@@ -32,7 +32,6 @@ class HYMODLER_animations_panel(bpy.types.Panel):
             box.scale_x = 1.0
             box.scale_y = 1.0
             row = box.row(heading="", align=False)
-            row.alert = True
             row.enabled = True
             row.active = True
             row.use_property_split = False
@@ -79,12 +78,19 @@ class HYMODLER_animations_panel(bpy.types.Panel):
                 icon_value=0,
                 emboss=True,
             )
-            op = row.operator(
+
+            col = row.column(heading="", align=True)
+            op = col.operator(
                 "hymodler.remove_animation",
                 text="",
                 icon_value=101,
                 emboss=True,
                 depress=False,
+            )
+            col.operator(
+                "hymodler.export_single_animation",
+                text="",
+                icon="FILE_TICK",
             )
             op.hymodler_id = i
         op = layout.operator(
