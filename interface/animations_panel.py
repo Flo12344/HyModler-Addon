@@ -100,13 +100,14 @@ class HYMODLER_animations_panel(bpy.types.Panel):
             emboss=True,
             depress=False,
         )
-        # op = layout.operator(
-        #     "sn.dummy_button_operator",
-        #     text="Expor All",
-        #     icon_value=136,
-        #     emboss=True,
-        #     depress=False,
-        # )
+        if len(bpy.context.scene.hymodler_animations) > 1:
+            op = layout.operator(
+                "hymodler.export_all_animations",
+                text="Export All",
+                icon="FILE_TICK",
+                emboss=True,
+                depress=False,
+            )
 
 
 def register():
