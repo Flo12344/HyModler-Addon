@@ -12,7 +12,6 @@ And also because of a let's say "skill issue" on my side I'm way more used to bl
 - UV editing using the UI panel + snapping
 - Texturing
 - Attachment
-- Group animation
 - Bone animation
 - Bone constraint
 - Import
@@ -21,6 +20,7 @@ And also because of a let's say "skill issue" on my side I'm way more used to bl
 
 ## Future Features Goal
 
+- Group animation (Main priority)
 - Empty parent compact for first child
 - Group to rig (for model imported)
 - Modifiers support
