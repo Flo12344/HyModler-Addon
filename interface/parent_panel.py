@@ -13,7 +13,7 @@ class HYMODLER_parent_panel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return not (False)
+        return False
 
     def draw_header(self, context):
         layout = self.layout
