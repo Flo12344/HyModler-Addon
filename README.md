@@ -31,6 +31,24 @@ And also because of a let's say "skill issue" on my side I'm way more used to bl
 - Animated UV
 - Animated Visibility
 
+## How to Use
+
+- Installation: Edit > Preferences > Add-ons > (Top-Right) Install from disk
+
+- Object:
+    - Use the N-Panel to add hymodler objects
+- Modeling:
+    - Classic "S" scale affect the stretch the others (G and R) works normally
+    - Edit the values in HyModler on the N-Panel (in Object mode only)
+- UV:
+    - To rotate/flip use the tools in the N-Panel
+    - To Move only use Face mode and disable "Sticky Selection Mode" (Try to only move UV using snapping the export rounds the UV positions)
+- Animation:
+    - (Currently) Animate using only Armatures
+    - You should be able to use any bone constraint
+- Modifier:
+    - Not supported at the moment
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first
