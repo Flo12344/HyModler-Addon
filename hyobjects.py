@@ -44,7 +44,6 @@ def create_hybox():
     bpy.context.view_layer.objects.active = obj
     obj["hymesh"] = True
     obj["type"] = "box"
-    obj.rotation_mode = "QUATERNION"
     return obj
 
 
@@ -80,7 +79,6 @@ def create_hyquad():
     obj["type"] = "quad"
 
     obj.name = "HyQuad"
-    obj.rotation_mode = "QUATERNION"
     return obj
 
 
@@ -90,7 +88,6 @@ def create_hyarmature():
     obj["hymesh"] = True
     obj["type"] = "none"
     obj.name = "HyArmature"
-    obj.rotation_mode = "QUATERNION"
     return obj
 
 
@@ -100,7 +97,6 @@ def create_attachement():
     obj["hymesh"] = True
     obj["type"] = "none"
     obj.name = "HyAttachement"
-    obj.rotation_mode = "QUATERNION"
     return obj
 
 
@@ -110,5 +106,4 @@ def create_group():
     obj["hymesh"] = True
     obj["type"] = "none"
     obj.name = "HyGroup"
-    obj.rotation_mode = "QUATERNION"
     return obj

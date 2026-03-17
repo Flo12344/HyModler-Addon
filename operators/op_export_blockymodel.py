@@ -40,7 +40,10 @@ class HytaleSerializer:
         local_matrix = self._get_obj_local_matrix(obj)
 
         position = local_matrix.to_translation()
-        rotation = obj.rotation_quaternion
+        if obj.rotation_mode == "QUATERNION":
+            rotation = obj.rotation_quaternion
+        else:
+            rotation = obj.rotation_euler.to_quaternion()
         if obj.parent and obj.parent.type == "ARMATURE":
             rotation = local_matrix.to_quaternion()
 

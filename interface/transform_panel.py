@@ -70,30 +70,23 @@ class HYMODLER_transform_panel(bpy.types.Panel):
                 index=2,
             )
             sub_col.label(text="Rotation", icon_value=0)
-            sub_col.prop(
-                bpy.data.objects[obj.name],
-                "rotation_euler",
-                text="X",
-                icon_value=0,
-                emboss=True,
-                index=0,
-            )
-            sub_col.prop(
-                bpy.data.objects[obj.name],
-                "rotation_euler",
-                text="Y",
-                icon_value=0,
-                emboss=True,
-                index=1,
-            )
-            sub_col.prop(
-                bpy.data.objects[obj.name],
-                "rotation_euler",
-                text="Z",
-                icon_value=0,
-                emboss=True,
-                index=2,
-            )
+            if obj.rotation_mode == "QUATERNION":
+                sub_col.prop(obj, "rotation_quaternion", text="W", index=0)
+                sub_col.prop(obj, "rotation_quaternion", text="X", index=1)
+                sub_col.prop(obj, "rotation_quaternion", text="Y", index=2)
+                sub_col.prop(obj, "rotation_quaternion", text="Z", index=3)
+
+            elif obj.rotation_mode == "AXIS_ANGLE":
+                sub_col.prop(obj, "rotation_axis_angle", text="Angle", index=0)
+                sub_col.prop(obj, "rotation_axis_angle", text="X", index=1)
+                sub_col.prop(obj, "rotation_axis_angle", text="Y", index=2)
+                sub_col.prop(obj, "rotation_axis_angle", text="Z", index=3)
+
+            else:
+                sub_col.prop(obj, "rotation_euler", text="X", index=0)
+                sub_col.prop(obj, "rotation_euler", text="Y", index=1)
+                sub_col.prop(obj, "rotation_euler", text="Z", index=2)
+
             sub_col.label(text="Stretch", icon_value=0)
             sub_col.prop(
                 bpy.data.objects[obj.name],
@@ -136,14 +129,15 @@ class HYMODLER_transform_panel(bpy.types.Panel):
                 emboss=True,
                 index=1,
             )
-            sub_col.prop(
-                obj,
-                "hymodler_size",
-                text="Z",
-                icon_value=0,
-                emboss=True,
-                index=2,
-            )
+            if obj["type"] != "quad":
+                sub_col.prop(
+                    obj,
+                    "hymodler_size",
+                    text="Z",
+                    icon_value=0,
+                    emboss=True,
+                    index=2,
+                )
             main_col.separator(factor=1.0)
             main_col.prop(
                 obj,
