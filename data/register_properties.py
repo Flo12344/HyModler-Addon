@@ -94,6 +94,12 @@ def register_properties():
     bpy.types.Scene.hymodler_animations = bpy.props.CollectionProperty(
         name="Animations", description="", type=animation.GROUP_animation_data
     )
+    bpy.types.Scene.hymodler_animation_output_dir = bpy.props.StringProperty(
+        name="Output Dir", description="", default="", subtype="DIR_PATH"
+    )
+    bpy.types.Scene.hymodler_anim_selection_only = bpy.props.BoolProperty(
+        name="Selection only Animation", description="", default=False
+    )
 
 
 def unregister_properties():
@@ -104,5 +110,13 @@ def unregister_properties():
     del bpy.types.Object.hymodler_doublesided
     del bpy.types.Object.hymodler_shadingmode
     del bpy.types.Object.hymodler_size
+    del bpy.types.Object.hymodler_uv_rotation
+    del bpy.types.Object.hymodler_uv_horizontal_flip
+    del bpy.types.Object.hymodler_uv_vertical_flip
+    del bpy.types.Object.hymodler_bbname
+    del bpy.types.Object.hymodler_bbquad_orient
+    del bpy.types.Object.hymodler_bbid
+    del bpy.types.Scene.hymodler_animation_output_dir
+    del bpy.types.Scene.hymodler_anim_selection_only
     bpy.utils.unregister_class(animation.GROUP_animation_data)
     pass
