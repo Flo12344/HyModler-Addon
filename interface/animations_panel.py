@@ -21,6 +21,18 @@ class HYMODLER_animations_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        layout.prop(
+            bpy.context.scene,
+            "hymodler_animation_output_dir",
+            text="Anim Output Dir",
+        )
+        layout.prop(
+            bpy.context.scene,
+            "hymodler_anim_selection_only",
+            text="Selection Only",
+        )
+
         for i in range(len(bpy.context.scene.hymodler_animations)):
             box = layout.box()
             box.alert = False
@@ -87,7 +99,8 @@ class HYMODLER_animations_panel(bpy.types.Panel):
                 emboss=True,
                 depress=False,
             )
-            col.operator(
+            op.hymodler_id = i
+            op = col.operator(
                 "hymodler.export_single_animation",
                 text="",
                 icon="FILE_TICK",

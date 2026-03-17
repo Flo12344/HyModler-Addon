@@ -1,8 +1,10 @@
+import json
 import bpy
 import mathutils
 import bmesh
 
 import math
+from ..script import animation_export
 
 
 class OP_Export_Single_Animation(bpy.types.Operator):
@@ -10,6 +12,9 @@ class OP_Export_Single_Animation(bpy.types.Operator):
     bl_label = "Export Animation"
     bl_description = ""
     bl_options = {"REGISTER", "UNDO"}
+    hymodler_id: bpy.props.IntProperty(
+        name="ID", description="", default=0, subtype="NONE"
+    )
 
     @classmethod
     def poll(cls, context):
@@ -18,6 +23,23 @@ class OP_Export_Single_Animation(bpy.types.Operator):
         return not False
 
     def execute(self, context):
+        serializer = animation_export.HytaleSerializer()
+
+        if bpy.context.scene.hymodler_anim_selection_only:
+            iter = context.selected_objects
+        else:
+            iter = context.scene.objects
+
+        anim = bpy.context.scene.hymodler_animations[self.hymodler_id]
+        objects = [obj for obj in iter if obj.type in ("MESH", "EMPTY", "ARMATURE")]
+        serializer.init_scene(objects)
+        nodes = serializer.serialize_animation(anim)
+        with open(
+            bpy.context.scene.hymodler_animation_output_dir + anim.name + ".blockyanim",
+            "w",
+        ) as f:
+            f.write(json.dumps(nodes, indent=2))
+
         return {"FINISHED"}
 
     def invoke(self, context, event):
@@ -37,6 +59,25 @@ class OP_Export_All_Animations(bpy.types.Operator):
         return not False
 
     def execute(self, context):
+        serializer = animation_export.HytaleSerializer()
+
+        if bpy.context.scene.hymodler_anim_selection_only:
+            iter = context.selected_objects
+        else:
+            iter = context.scene.objects
+
+        for anim in bpy.context.scene.hymodler_animations:
+            objects = [obj for obj in iter if obj.type in ("MESH", "EMPTY", "ARMATURE")]
+            serializer.init_scene(objects)
+            nodes = serializer.serialize_animation(anim)
+            with open(
+                bpy.context.scene.hymodler_animation_output_dir
+                + anim.name
+                + ".blockyanim",
+                "w",
+            ) as f:
+                f.write(json.dumps(nodes, indent=2))
+
         return {"FINISHED"}
 
     def invoke(self, context, event):
