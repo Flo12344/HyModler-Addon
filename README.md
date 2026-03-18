@@ -18,11 +18,11 @@ And also because of a let's say "skill issue" on my side I'm way more used to bl
 - Bone constraint
 - Import
 - Export
-- Ignore object on export
 
 ## Future Features Goal
 
 - Group animation (Main priority)
+- Ignore object on export
 - Empty parent compact for first child
 - Group to rig (for model imported)
 - Modifiers support
