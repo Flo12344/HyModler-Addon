@@ -1,3 +1,5 @@
+<img align="center" src="https://github.com/Flo12344/HyModler-Addon/blob/main/HyModler_logo.png">
+
 # HyModler
 ![Static Badge](https://img.shields.io/badge/Blender-4.+-g?logo=blender)\
 HyModler is a Blender addon for supporting import and export of Hytale Blockymodel and Blockyanim as well as supporting modeling of it.
