@@ -5,6 +5,7 @@ import bmesh
 from bpy_extras.io_utils import ImportHelper
 import json
 import copy
+import os
 from .. import helper
 from .. import hyobjects
 from .. import hyobject_edit
@@ -175,6 +176,7 @@ class HytaleDeserializer:
 
                 hyobject_edit.set_origin_to_geometry_center(obj)
                 hyobject_edit.add_offset_to_hyobject(obj, -offset)
+                obj.data.materials.append(self.mat)
 
                 self.__texture_handling(obj, node["shape"]["textureLayout"])
             case "box":
@@ -187,6 +189,7 @@ class HytaleDeserializer:
 
                 hyobject_edit.set_origin_to_geometry_center(obj)
                 hyobject_edit.add_offset_to_hyobject(obj, -offset)
+                obj.data.materials.append(self.mat)
 
                 self.__texture_handling(obj, node["shape"]["textureLayout"])
             case _:
@@ -212,7 +215,8 @@ class HytaleDeserializer:
             for n in node["children"]:
                 self.parse_node(n, obj, node)
 
-    def load_nodes(self, nodes):
+    def load_nodes(self, nodes, name):
+        self.mat = bpy.data.materials.new(name)
         for node in nodes:
             self.parse_node(node)
         pass
@@ -232,11 +236,14 @@ class OP_Import_Blockymodel(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         deserializer = HytaleDeserializer()
+
+        file_name = os.path.basename(self.filepath)
+        name = os.path.splitext(file_name)[0]
         with open(self.filepath, "r") as file:
             j = json.load(file)
 
         if "nodes" in j:
-            deserializer.load_nodes(j["nodes"])
+            deserializer.load_nodes(j["nodes"], name)
         return {"FINISHED"}
 
 
