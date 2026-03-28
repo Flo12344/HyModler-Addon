@@ -8,6 +8,14 @@ HyModler is a Blender addon for supporting import and export of Hytale Blockymod
 The main reasons are modifiers(currently not supported) and bone constraints (through baking and keyframes reduction), the best would be to get geometry nodes to be usable in some capacity\
 And also because of a let's say "skill issue" on my side I'm way more used to blender interface and shortcuts <.<
 
+## Current Limitation
+
+- Exported animation need to be used with model exported from blender
+- Can't import Animation
+- To auto load texture they need:
+    - to be in the same folder
+    - have the same name or name + _Texture or name + _texture
+
 ## Supported Features
 
 - Modeling using the UI panel
