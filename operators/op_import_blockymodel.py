@@ -165,8 +165,10 @@ class HytaleDeserializer:
 
             case "quad":
                 obj = hyobjects.create_hyquad()
-                obj.hymodler_size[0] = node["shape"]["settings"]["size"]["x"]
-                obj.hymodler_size[1] = node["shape"]["settings"]["size"]["y"]
+                _size = node.get("shape", {}).get("settings", {}).get("size", {})
+                x = _size.get("x", 0)
+                y = _size.get("y", 0)
+                obj.hymodler_size = (x, y, 0)
                 prot = hyobject_edit.get_initial_quad_rot(
                     node["shape"]["settings"]["normal"]
                 )
@@ -183,9 +185,11 @@ class HytaleDeserializer:
                 obj = hyobjects.create_hybox()
 
                 #
-                obj.hymodler_size[0] = node["shape"]["settings"]["size"]["x"]
-                obj.hymodler_size[2] = node["shape"]["settings"]["size"]["y"]
-                obj.hymodler_size[1] = node["shape"]["settings"]["size"]["z"]
+                _size = node.get("shape", {}).get("settings", {}).get("size", {})
+                x = _size.get("x", 0)
+                y = _size.get("y", 0)
+                z = _size.get("z", 0)
+                obj.hymodler_size = (x, z, y)
 
                 hyobject_edit.set_origin_to_geometry_center(obj)
                 hyobject_edit.add_offset_to_hyobject(obj, -offset)
