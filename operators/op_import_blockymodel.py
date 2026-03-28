@@ -192,11 +192,13 @@ class HytaleDeserializer:
             case _:
                 return
 
+        obj.rotation_mode = "QUATERNION"
         obj.name = name
         obj.hymodler_bbname = node["name"]
         obj.location = origin
         obj.scale = stretch
         obj.rotation_quaternion = rotation
+        obj.rotation_mode = "XYZ"
 
         if parent_obj is not None:
             if node["shape"]["type"] == "none":

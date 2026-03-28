@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 id = "hymodler"
-version = "1.0.0"
+version = "1.0.1"
 name = "HyModler"
 tagline = "HyModler"
 maintainer = "Flo_12344 (Florent Daerden)"
