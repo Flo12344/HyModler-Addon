@@ -83,27 +83,40 @@ def create_hyquad():
 
 
 def create_hyarmature():
-    bpy.ops.object.armature_add()
-    obj = bpy.context.active_object
+    armature_data = bpy.data.armatures.new("HyArmature")
+    obj = bpy.data.objects.new("HyArmatureObject", armature_data)
+    bpy.context.collection.objects.link(obj)
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+
+    bpy.ops.object.mode_set(mode="EDIT")
+    bone = armature_data.edit_bones.new("Bone")
+    bone.head = (0, 0, 0)
+    bone.tail = (0, 0, 1)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
     obj["hymesh"] = True
     obj["type"] = "none"
-    obj.name = "HyArmature"
     return obj
 
 
 def create_attachement():
-    bpy.ops.object.empty_add(type="PLAIN_AXES")
-    obj = bpy.context.active_object
+    obj = bpy.data.objects.new("HyAttachement", None)
+    obj.empty_display_type = "PLAIN_AXES"
+    bpy.context.collection.objects.link(obj)
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
     obj["hymesh"] = True
     obj["type"] = "none"
-    obj.name = "HyAttachement"
     return obj
 
 
 def create_group():
-    bpy.ops.object.empty_add(type="PLAIN_AXES")
-    obj = bpy.context.active_object
+    obj = bpy.data.objects.new("HyGroup", None)
+    obj.empty_display_type = "PLAIN_AXES"
+    bpy.context.collection.objects.link(obj)
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
     obj["hymesh"] = True
     obj["type"] = "none"
-    obj.name = "HyGroup"
     return obj
