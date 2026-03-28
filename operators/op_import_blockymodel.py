@@ -223,9 +223,6 @@ class OP_Import_Blockymodel(bpy.types.Operator, ImportHelper):
     bl_options = {"REGISTER", "UNDO"}
     filter_glob: bpy.props.StringProperty(default="*.blockymodel", options={"HIDDEN"})
     filename_ext = ".blockymodel"
-    hymodler_selection_only: bpy.props.BoolProperty(
-        name="Selection Only", description="", default=False
-    )
 
     @classmethod
     def poll(cls, context):
@@ -250,7 +247,6 @@ def add_to_topbar_mt_file_import(self, context):
         emboss=True,
         depress=False,
     )
-    op.sna_selection_only = False
 
 
 def register():
