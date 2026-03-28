@@ -215,8 +215,23 @@ class HytaleDeserializer:
             for n in node["children"]:
                 self.parse_node(n, obj, node)
 
-    def load_nodes(self, nodes, name):
+    def load_nodes(self, nodes, name, texture_path):
         self.mat = bpy.data.materials.new(name)
+        self.mat.use_nodes = True
+        tree = self.mat.node_tree
+        texnodes = tree.nodes
+        texnodes.clear()
+        np = texnodes.new(type="ShaderNodeBsdfPrincipled")
+
+        links = tree.links
+        no = texnodes.new(type="ShaderNodeOutputMaterial")
+        links.new(np.outputs["BSDF"], no.inputs["Surface"])
+        if texture_path is not None:
+            nt = texnodes.new(type="ShaderNodeTexImage")
+            nt.image = bpy.data.images.load(texture_path)
+            nt.interpolation = "Closest"
+            links.new(nt.outputs["Color"], np.inputs["Base Color"])
+            bpy.context.scene.hymodler_texturesize = nt.image.size
         for node in nodes:
             self.parse_node(node)
         pass
@@ -236,14 +251,21 @@ class OP_Import_Blockymodel(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         deserializer = HytaleDeserializer()
+        exts = (".png", "_Texture.png", "_texture.png")
 
         file_name = os.path.basename(self.filepath)
+        dir = os.path.dirname(self.filepath)
+        texture_path = None
         name = os.path.splitext(file_name)[0]
+        for ext in exts:
+            if os.path.exists(dir + "/" + name + ext):
+                texture_path = dir + "/" + name + ext
+                break
         with open(self.filepath, "r") as file:
             j = json.load(file)
 
         if "nodes" in j:
-            deserializer.load_nodes(j["nodes"], name)
+            deserializer.load_nodes(j["nodes"], name, texture_path)
         return {"FINISHED"}
 
 
